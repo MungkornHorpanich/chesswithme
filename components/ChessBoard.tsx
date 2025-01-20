@@ -1,15 +1,17 @@
 "use client";
 
+// @ts-ignore
 import React, { useMemo, useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
-import { Chess } from "chess.js";
+import { Chess, Move } from "chess.js";
 
 // Engine class for Stockfish interaction
 class Engine {
   private stockfish: Worker;
 
   constructor() {
-    this.stockfish = new Worker("./stockfish.js");
+    // Make sure the stockfish.js is in the public directory
+    this.stockfish = new Worker("/stockfish.js");
 
     // Initialize the Stockfish engine
     this.stockfish.postMessage("uci");
@@ -43,11 +45,11 @@ export const PlayAgainstStockfish: React.FC = () => {
   const [chessBoardPosition, setChessBoardPosition] = useState(game.fen());
 
   const onDrop = (sourceSquare: string, targetSquare: string) => {
+    // Make a move and include promotion if necessary
     const move = game.move({
       from: sourceSquare,
       to: targetSquare,
-      // No promotion for regular moves, only for pawn promotion
-      promotion: "q", // Default to queen if it's a pawn promotion
+      promotion: "q", // Default to Queen if promotion is needed
     });
 
     if (!move) return false; // Illegal move
@@ -60,22 +62,35 @@ export const PlayAgainstStockfish: React.FC = () => {
   };
 
   const findBestMove = () => {
-    const depth = 10; // Fixed depth for Stockfish
+    const depth = 10; // Depth for Stockfish
     engine.evaluatePosition(game.fen(), depth);
     engine.onMessage(({ bestMove }) => {
+      interface Move {
+        from: string;
+        to: string;
+        promotion?: string;
+      }
+
       if (bestMove) {
-        const moveObj: { from: string; to: string; promotion?: string } = {
+        // Create a move object with promotion handling
+        const moveObj: Move = {
           from: bestMove.substring(0, 2),
           to: bestMove.substring(2, 4),
         };
 
-        // If the best move is a promotion (i.e., last rank and a pawn), we add promotion
+        // If the move includes promotion (e.g., "e7e8q"), add the promotion piece
         if (bestMove.length === 5) {
-          moveObj["promotion"] = bestMove[4];
+          moveObj.promotion = bestMove[4] as "q" | "r" | "b" | "n"; // Get the promotion piece (e.g., 'q', 'r', 'b', 'n')
         }
 
-        game.move(moveObj);
-        setChessBoardPosition(game.fen());
+        const move = game.move(moveObj);
+        if (move) {
+          setChessBoardPosition(game.fen());
+        }
+
+        if (game.isGameOver()) {
+          alert("Game over");
+        }
       }
     });
   };

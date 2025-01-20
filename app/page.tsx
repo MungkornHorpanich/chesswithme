@@ -1,4 +1,4 @@
-import { PlayAgainstStockfish } from "@/components/ChessBoard";
+import { PlayAgainstStockfish } from "@/components/Chessboard";
 
 export default function Home() {
   return (
