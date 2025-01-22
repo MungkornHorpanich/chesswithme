@@ -1,19 +1,15 @@
 "use client";
 
-// @ts-ignore
 import React, { useMemo, useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess, Move } from "chess.js";
 
-// Engine class for Stockfish interaction
 class Engine {
   private stockfish: Worker;
 
   constructor() {
-    // Make sure the stockfish.js is in the public directory
     this.stockfish = new Worker("/stockfish.js");
 
-    // Initialize the Stockfish engine
     this.stockfish.postMessage("uci");
     this.stockfish.postMessage("isready");
   }
@@ -45,18 +41,16 @@ export const PlayAgainstStockfish: React.FC = () => {
   const [chessBoardPosition, setChessBoardPosition] = useState(game.fen());
 
   const onDrop = (sourceSquare: string, targetSquare: string) => {
-    // Make a move and include promotion if necessary
     const move = game.move({
       from: sourceSquare,
       to: targetSquare,
-      promotion: "q", // Default to Queen if promotion is needed
+      promotion: "q",
     });
 
     if (!move) return false; // Illegal move
 
     setChessBoardPosition(game.fen());
 
-    // Trigger Stockfish to find its best move
     findBestMove();
     return true;
   };
@@ -72,13 +66,11 @@ export const PlayAgainstStockfish: React.FC = () => {
       }
 
       if (bestMove) {
-        // Create a move object with promotion handling
         const moveObj: Move = {
           from: bestMove.substring(0, 2),
           to: bestMove.substring(2, 4),
         };
 
-        // If the move includes promotion (e.g., "e7e8q"), add the promotion piece
         if (bestMove.length === 5) {
           moveObj.promotion = bestMove[4] as "q" | "r" | "b" | "n"; // Get the promotion piece (e.g., 'q', 'r', 'b', 'n')
         }
@@ -96,7 +88,6 @@ export const PlayAgainstStockfish: React.FC = () => {
   };
 
   useEffect(() => {
-    // Cleanup on component unmount
     return () => {
       engine.quit();
     };
